@@ -38,29 +38,41 @@ class RegNN(nn.Module):
     def forward(self, x):
         return self.linear(x)
 
+# def cycl_loss(output, target):
+#     theta_1 = torch.linspace(0, 2 * np.pi, 1000).view(-1,1)
+#     r = 10
+#     x = r * (theta_1 - np.sin(theta_1))
+#     y = -r * (1 - np.cos(theta_1))
+
+#     min_distance = float('inf')
+#     closest_element = None
+#     for element in range(len(x)):
+#         distance = torch.abs(x[element] - output)
+#         if distance < min_distance:
+#             min_distance = distance
+#             closest_element = element
+
+#     y_cycl = y[closest_element]   
+
+#     return y_cycl
+
 def cycl_loss(output, target):
-    theta_1 = torch.linspace(0, 2 * np.pi, 1000).view(-1,1)
     r = 10
-    x = r * (theta_1 - np.sin(theta_1))
-    y = -r * (1 - np.cos(theta_1))
+    # loss = torch.abs(r * (output - torch.sin(output)) - r * (1 - torch.cos(output)))
+    loss = r * ((output - target) - torch.sin(output-target))
 
-    min_distance = float('inf')
-    closest_element = None
-    for element in range(len(x)):
-        distance = torch.abs(x[element] - output)
-        if distance < min_distance:
-            min_distance = distance
-            closest_element = element
+    return loss
 
-    y_cycl = y[closest_element]   
+def cycl_x(x):
+    r = 10
+    cycl_x = r * (x - torch.sin(x))
 
-    return y_cycl
-
+    return cycl_x
 
 model = RegNN()
 
 # Define the optimizer
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0)
+optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0)
 criterion = torch.nn.MSELoss()
 model.train()
 
@@ -79,10 +91,10 @@ for epoch in range(num_epochs):
     # Forward pass
     output = model(x)
     target = target.view(-1,1)
-    loss = criterion(output, target)
+    loss = cycl_loss(output, target)
     # Backward pass
     loss.backward()
-    crr_weights_list.append(weights.item())
+    crr_weights_list.append(cycl_x(weights))
     optimizer.step()
 
     losses.append(loss.item())
@@ -105,8 +117,8 @@ print('Test loss:', loss_test.item())
 print('Weight:', weights.item())
 
 # Create a plot
-plt.figure(figsize=(8,6))
-plt.scatter(crr_weights_list, losses, label='Target data', color='blue')
-# plt.scatter(x, target, label='Cycloid', color='red')
-plt.legend()
-plt.savefig('train_result.png')
+# plt.figure(figsize=(8,6))
+# plt.scatter(crr_weights_list, losses, label='Target data', color='blue')
+# # plt.scatter(x, target, label='Cycloid', color='red')
+# plt.legend()
+# plt.savefig('regression.png')
