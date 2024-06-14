@@ -8,27 +8,31 @@ from pytorchcv.model_provider import get_model as ptcv_get_model # model
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import pdb
+from regression import * #added
+import copy #added
 
 # enable cuda devices
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
+inputs = x
+targets = target
+
 # get the model 
-model = ptcv_get_model("resnet20_cifar10", pretrained=True)
+model = model.cuda()
 # change the model to eval mode to disable running stats upate
-model.eval()
+# model.eval()
 
-# create loss function
-criterion = torch.nn.CrossEntropyLoss()
+# # create loss function
+# criterion = torch.nn.CrossEntropyLoss()
 
-# get dataset 
-train_loader, test_loader = getData()
+# # get dataset 
+# train_loader, test_loader = getData()
 
 # for illustrate, we only use one batch to do the tutorial
-for inputs, targets in train_loader:
-    break
+# for inputs, targets in train_loader:
+#     break
 
 # we use cuda to make the computation fast
 model = model.cuda()
@@ -53,11 +57,11 @@ lams2 = np.linspace(-0.5, 0.5, 21).astype(np.float32)
 loss_list = []
 
 # create a copy of the model
-model_perb1 = ptcv_get_model("resnet20_cifar10", pretrained=True)
+model_perb1 = copy.deepcopy(model)
 model_perb1.eval()
 model_perb1 = model_perb1.cuda()
 
-model_perb2 = ptcv_get_model("resnet20_cifar10", pretrained=True)
+model_perb2 = copy.deepcopy(model)
 model_perb2.eval()
 model_perb2 = model_perb2.cuda()
 
@@ -69,22 +73,15 @@ for lam1 in lams1:
         loss_list.append((lam1, lam2, criterion(model_perb2(inputs), targets).item()))   
 
 loss_list = np.array(loss_list)
-                         
+
 fig = plt.figure()
 landscape = fig.add_subplot(111, projection='3d')
 landscape.plot_trisurf(loss_list[:,0], loss_list[:,1], loss_list[:,2], alpha=0.8, cmap='viridis')
-
-
-
-landscape.set_title('2D Loss Landscape')
+landscape.set_title('Loss Landscape')
 landscape.set_xlabel(r"$w_1$")
 landscape.set_ylabel(r"$w_2$")
 landscape.set_zlabel('Loss')
-landscape.text2D(0.02, 0.72, 'Loss', transform=landscape.transAxes)
-landscape.set_xticklabels([])
-landscape.set_yticklabels([])
-landscape.set_zticklabels([])
 
 #landscape.view_init(elev=15, azim=75)
 landscape.dist = 6
-plt.savefig('/root/PyHessian/graph/2D_loss_landscape.png', dpi=300, bbox_inches='tight')
+plt.savefig('2D_test_cycloid.png', dpi=300, bbox_inches='tight')

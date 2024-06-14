@@ -10,6 +10,17 @@ import pdb
 def mse_loss(output, target):
     return torch.mean((output - target) ** 2)
 
+# def cycloid(r, theta):
+#     x = r(theta - np.sin(theta))
+#     y = r(1 - np.cos(theta))
+#     return x, y
+
+def cycl_func(input):
+    return -r * (1 - input.detach().cos()) + mse_losses[i][0]
+
+def cycl_func_modified(input):
+    return torch.sum(cycl_func(input))
+
 #random seed
 random_seed = 0
 torch.manual_seed(random_seed)  # torch
@@ -20,7 +31,7 @@ random.seed(random_seed)  # random
 
 #parameter
 num_epochs = 100
-num_iter = 1000
+num_iter = 100
 num_extract = 50
 
 # Define the input and target
@@ -103,27 +114,32 @@ for i in tqdm(range(len(mse_weights_list))):
     cycl_graph_gradients_2 = np.gradient(cycloid_graph_2_1.flatten(), x_2.flatten(), axis=0)
     mse_weight_gradients = np.gradient(mse_losses[i], mse_weights_list[i], axis=0) #i번째 Loss 함수의 gradient
 
+    #Hessian
+    cycl_graph_hessian_1 = torch.autograd.functional.hessian(cycl_func_modified, x_1)
+
     #Gradient 차이 계산
     gradients_diff_1 = abs(mse_weight_gradients - cycl_graph_gradients_1)**2
     gradients_diff_2 = abs(mse_weight_gradients - cycl_graph_gradients_2)**2
     gradients_diff_mean_1 = np.mean(gradients_diff_1)
     gradients_diff_mean_2 = np.mean(gradients_diff_2)
-    if np.mean(gradients_diff_mean_1) >= n`p.mean(gradients_diff_mean_2):
+    if np.mean(gradients_diff_mean_1) >= np.mean(gradients_diff_mean_2):
         gradients_diff_mean = gradients_diff_mean_2
     else:
         gradients_diff_mean = gradients_diff_mean_1
     gradients_list.append(gradients_diff_mean)
+    pdb.set_trace()
 
-    #compare gradient graph
-    plt.plot(x_1, cycloid_graph_1_1, label="Cycloid", color="Orange")
-    plt.plot(x_2, cycloid_graph_2_1, color="Orange")
-    plt.plot(mse_weights_list[i], mse_losses[i], label="MSE Loss Function")
-    plt.xlabel("weight")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.show()
-    # plt.savefig('fig1.png')
-    print()
+    # #compare gradient graph
+    # Turn off if you don't want to see the graph
+    # plt.plot(x_1, cycloid_graph_1_1, label="Cycloid", color="Orange")
+    # plt.plot(x_2, cycloid_graph_2_1, color="Orange")
+    # plt.plot(mse_weights_list[i], mse_losses[i], label="MSE Loss Function")
+    # plt.xlabel("weight")
+    # plt.ylabel("Loss")
+    # plt.legend()
+    # plt.show()
+    # # plt.savefig('fig1.png')
+    # print()
 
 min_idx = np.argmin(gradients_list)
 mse_losses_mean_min = mse_losses[min_idx]
@@ -170,5 +186,5 @@ plt.plot(mse_losses_mean, label="Mean of MSE", color='red')
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.legend()
-# plt.savefig("fig2.png")
-plt.show()
+plt.savefig("cycloid.png")
+# plt.show()
